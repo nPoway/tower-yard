@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 
+@MainActor
 final class TowerYardProfileStore: ObservableObject {
     @Published private(set) var profile: BuilderProfile
     @Published private(set) var towerResults: [TowerResultCard]
@@ -9,9 +10,23 @@ final class TowerYardProfileStore: ObservableObject {
     private let featureAvailability: any TowerFeatureAvailabilityProviding
     private let galleryLimit = 30
 
+    convenience init() {
+        self.init(
+            persistence: UserDefaultsTowerYardPersistence(),
+            featureAvailability: PlaceholderFeatureAvailabilityProvider()
+        )
+    }
+
+    convenience init(persistence: any TowerYardPersistence) {
+        self.init(
+            persistence: persistence,
+            featureAvailability: PlaceholderFeatureAvailabilityProvider()
+        )
+    }
+
     init(
-        persistence: any TowerYardPersistence = UserDefaultsTowerYardPersistence(),
-        featureAvailability: any TowerFeatureAvailabilityProviding = PlaceholderFeatureAvailabilityProvider()
+        persistence: any TowerYardPersistence,
+        featureAvailability: any TowerFeatureAvailabilityProviding
     ) {
         let snapshot = persistence.loadSnapshot()
         self.profile = snapshot.profile

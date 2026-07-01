@@ -297,25 +297,34 @@ private struct FogLayer: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { timeline in
             GeometryReader { proxy in
-                let time = timeline.date.timeIntervalSinceReferenceDate
-                let intensity = CGFloat(weather.intensity)
-
                 ForEach(0..<6, id: \.self) { index in
-                    let phase = CGFloat((time * (0.025 + weather.intensity * 0.035) + Double(index) * 0.16).truncatingRemainder(dividingBy: 1))
-                    let travel = proxy.size.width * 0.5
-                    let y = proxy.size.height * CGFloat(index + 1) / 7
-
-                    Capsule()
-                        .fill(.white.opacity(0.16 + weather.intensity * 0.12))
-                        .frame(
-                            width: proxy.size.width * (0.60 + CGFloat(index % 3) * 0.14),
-                            height: 34 + intensity * 28
-                        )
-                        .blur(radius: 16 + intensity * 12)
-                        .offset(x: phase * travel - travel / 2, y: y)
+                    fogBand(
+                        index: index,
+                        time: timeline.date.timeIntervalSinceReferenceDate,
+                        size: proxy.size
+                    )
                 }
             }
         }
+    }
+
+    private func fogBand(index: Int, time: TimeInterval, size: CGSize) -> some View {
+        let weatherIntensity = weather.intensity
+        let intensity = CGFloat(weatherIntensity)
+        let speed = 0.025 + weatherIntensity * 0.035
+        let phase = CGFloat((time * speed + Double(index) * 0.16).truncatingRemainder(dividingBy: 1))
+        let travel = size.width * 0.5
+        let yOffset = size.height * CGFloat(index + 1) / 7
+        let width = size.width * (0.60 + CGFloat(index % 3) * 0.14)
+        let height = 34 + intensity * 28
+        let blurRadius = 16 + intensity * 12
+        let xOffset = phase * travel - travel / 2
+
+        return Capsule()
+            .fill(.white.opacity(0.16 + weatherIntensity * 0.12))
+            .frame(width: width, height: height)
+            .blur(radius: blurRadius)
+            .offset(x: xOffset, y: yOffset)
     }
 }
 
