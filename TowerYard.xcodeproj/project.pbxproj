@@ -6,23 +6,83 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7A1000013001000100000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000013001000100000020 /* FirebaseCore */; };
+		7A1000013001000100000002 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000013001000100000021 /* FirebaseMessaging */; };
+		7A1000013001000100000003 /* AppsFlyerLib-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 7A1000013001000100000022 /* AppsFlyerLib-Static */; };
+		7A100001300100010000004A /* TowerYardNotificationService.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7A1000013001000100000040 /* TowerYardNotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7A100001300100010000004C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84902B002FF4362800FB6D1A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7A1000013001000100000045;
+			remoteInfo = TowerYardNotificationService;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7A1000013001000100000049 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7A100001300100010000004A /* TowerYardNotificationService.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		7A1000013001000100000040 /* TowerYardNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TowerYardNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		84902B082FF4362800FB6D1A /* TowerYard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TowerYard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		84902B162FF4362A00FB6D1A /* Exceptions for "TowerYard" folder in "TowerYard" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 84902B072FF4362800FB6D1A /* TowerYard */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		7A1000013001000100000041 /* TowerYardNotificationService */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TowerYardNotificationService;
+			sourceTree = "<group>";
+		};
 		84902B0A2FF4362800FB6D1A /* TowerYard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				84902B162FF4362A00FB6D1A /* Exceptions for "TowerYard" folder in "TowerYard" target */,
+			);
 			path = TowerYard;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7A1000013001000100000043 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84902B052FF4362800FB6D1A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A1000013001000100000003 /* AppsFlyerLib-Static in Frameworks */,
+				7A1000013001000100000001 /* FirebaseCore in Frameworks */,
+				7A1000013001000100000002 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				84902B0A2FF4362800FB6D1A /* TowerYard */,
+				7A1000013001000100000041 /* TowerYardNotificationService */,
 				84902B092FF4362800FB6D1A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				84902B082FF4362800FB6D1A /* TowerYard.app */,
+				7A1000013001000100000040 /* TowerYardNotificationService.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +110,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7A1000013001000100000045 /* TowerYardNotificationService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A1000013001000100000046 /* Build configuration list for PBXNativeTarget "TowerYardNotificationService" */;
+			buildPhases = (
+				7A1000013001000100000042 /* Sources */,
+				7A1000013001000100000043 /* Frameworks */,
+				7A1000013001000100000044 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7A1000013001000100000041 /* TowerYardNotificationService */,
+			);
+			name = TowerYardNotificationService;
+			packageProductDependencies = (
+			);
+			productName = TowerYardNotificationService;
+			productReference = 7A1000013001000100000040 /* TowerYardNotificationService.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		84902B072FF4362800FB6D1A /* TowerYard */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 84902B132FF4362900FB6D1A /* Build configuration list for PBXNativeTarget "TowerYard" */;
@@ -55,16 +139,21 @@
 				84902B042FF4362800FB6D1A /* Sources */,
 				84902B052FF4362800FB6D1A /* Frameworks */,
 				84902B062FF4362800FB6D1A /* Resources */,
+				7A1000013001000100000049 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7A100001300100010000004B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				84902B0A2FF4362800FB6D1A /* TowerYard */,
 			);
 			name = TowerYard;
 			packageProductDependencies = (
+				7A1000013001000100000020 /* FirebaseCore */,
+				7A1000013001000100000021 /* FirebaseMessaging */,
+				7A1000013001000100000022 /* AppsFlyerLib-Static */,
 			);
 			productName = TowerYard;
 			productReference = 84902B082FF4362800FB6D1A /* TowerYard.app */;
@@ -80,8 +169,16 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					7A1000013001000100000045 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					84902B072FF4362800FB6D1A = {
 						CreatedOnToolsVersion = 26.4.1;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -94,17 +191,29 @@
 			);
 			mainGroup = 84902AFF2FF4362800FB6D1A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7A1000013001000100000010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				7A1000013001000100000011 /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 84902B092FF4362800FB6D1A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				84902B072FF4362800FB6D1A /* TowerYard */,
+				7A1000013001000100000045 /* TowerYardNotificationService */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7A1000013001000100000044 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84902B062FF4362800FB6D1A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +224,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7A1000013001000100000042 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		84902B042FF4362800FB6D1A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +240,82 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		7A100001300100010000004B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A1000013001000100000045 /* TowerYardNotificationService */;
+			targetProxy = 7A100001300100010000004C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		7A1000013001000100000047 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 966LB27W74;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/TowerYardNotificationService-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.TowerYardbyburgess.NotificationService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = TowerYardDevelopNotification;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7A1000013001000100000048 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/TowerYardNotificationService-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.TowerYardbyburgess.NotificationService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		84902B112FF4362900FB6D1A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -160,7 +351,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = KXCQNF7A5K;
+				DEVELOPMENT_TEAM = 966LB27W74;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -178,7 +369,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -224,7 +415,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = KXCQNF7A5K;
+				DEVELOPMENT_TEAM = 966LB27W74;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -236,7 +427,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -249,28 +440,27 @@
 		84902B142FF4362900FB6D1A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TowerYard/TowerYard.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 966LB27W74;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Tower Yard";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TowerYard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Precision Path by Rutan";
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.TowerYardbyburgess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE_SPECIFIER = TowerYardDevelop;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -288,25 +478,23 @@
 		84902B152FF4362900FB6D1A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TowerYard/TowerYard.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Tower Yard";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TowerYard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Precision Path by Rutan";
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.TowerYardbyburgess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -327,6 +515,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7A1000013001000100000046 /* Build configuration list for PBXNativeTarget "TowerYardNotificationService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A1000013001000100000047 /* Debug */,
+				7A1000013001000100000048 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		84902B032FF4362800FB6D1A /* Build configuration list for PBXProject "TowerYard" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -346,6 +543,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7A1000013001000100000010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.15.0;
+			};
+		};
+		7A1000013001000100000011 /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AppsFlyerSDK/AppsFlyerFramework-Static.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.18.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7A1000013001000100000020 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A1000013001000100000010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		7A1000013001000100000021 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A1000013001000100000010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		7A1000013001000100000022 /* AppsFlyerLib-Static */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7A1000013001000100000011 /* XCRemoteSwiftPackageReference "AppsFlyerFramework-Static" */;
+			productName = "AppsFlyerLib-Static";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 84902B002FF4362800FB6D1A /* Project object */;
 }

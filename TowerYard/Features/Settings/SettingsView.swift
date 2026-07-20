@@ -5,7 +5,7 @@ struct SettingsView: View {
         YardScreen {
             YardSectionHeader(
                 title: "Settings",
-                subtitle: "Reference links for the TowerYard app.",
+                subtitle: "Reference links for Tower Yard: Skyline Builder.",
                 systemImage: "gearshape.fill"
             )
 
@@ -25,10 +25,10 @@ struct SettingsView: View {
                     SettingsDivider()
 
                     SettingsLegalLinkRow(
-                        title: "Terms of Use",
-                        subtitle: "Usage terms for TowerYard.",
-                        systemImage: "doc.text.fill",
-                        destination: TowerYardLegalLinks.termsOfUse
+                        title: "Support",
+                        subtitle: "Contact and support information.",
+                        systemImage: "questionmark.circle.fill",
+                        destination: TowerYardLegalLinks.support
                     )
                 }
                 .yardPanel(stroke: TowerYardTheme.constructionYellow.opacity(0.42))
@@ -40,8 +40,8 @@ struct SettingsView: View {
 }
 
 private enum TowerYardLegalLinks {
-    static let privacyPolicy = URL(string: "https://docs.google.com/document/d/15Vsjp03DfxSeq8I4LslqhunuT0J7DW84ai1G2hlP3mg/edit?usp=sharing")!
-    static let termsOfUse = URL(string: "https://docs.google.com/document/d/1B2176B-UIy-n3zIo_3kOEM8C0gh8buwU9nMd-j8mUFg/edit?usp=sharing")!
+    static let privacyPolicy = AppConfiguration.privacyPolicyURL
+    static let support = AppConfiguration.supportURL
 }
 
 private struct SettingsLegalLinkRow: View {
