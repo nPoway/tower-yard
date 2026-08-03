@@ -15,7 +15,11 @@ final class YardGameStore: ObservableObject {
     @Published private(set) var wind: CGFloat = 0
     @Published private(set) var instability: CGFloat = 0
     @Published private(set) var lean: CGFloat = 0
-    @Published private(set) var usedTools: [String] = ["Yard Crane"]
+    @Published private(set) var usedToolIDs: [GameToolID] = []
+    @Published private(set) var safetyNetArmed = false
+    @Published private(set) var foundationAssistDropsRemaining = 0
+    @Published private(set) var craneSlowdownDropsRemaining = 0
+    @Published private(set) var activeToolMessage: String?
     @Published private(set) var lastResult: YardGameResult?
     @Published private(set) var lastPlacementFeedback: YardPlacementFeedback?
 
@@ -92,6 +96,33 @@ final class YardGameStore: ObservableObject {
         return min(1, max(leanPressure, swayPressure))
     }
 
+    var usedTools: [String] {
+        GameToolID.allCases.compactMap { toolID in
+            let useCount = usedToolIDs.filter { $0 == toolID }.count
+            guard useCount > 0 else { return nil }
+
+            let name = TowerYardCatalog.tool(for: toolID).shortName
+            return useCount == 1 ? name : "\(name) ×\(useCount)"
+        }
+    }
+
+    var helperToolsAllowed: Bool {
+        configuration.helperToolsAllowed
+    }
+
+    var activeToolStatus: String? {
+        if safetyNetArmed {
+            return "Safety Net armed"
+        }
+        if foundationAssistDropsRemaining > 0 {
+            return "Foundation Booster: \(foundationAssistDropsRemaining) drops left"
+        }
+        if craneSlowdownDropsRemaining > 0 {
+            return "Crane Slowdown: \(craneSlowdownDropsRemaining) drops left"
+        }
+        return activeToolMessage
+    }
+
     func configure(for session: GameSession) {
         recordZenSnapshotIfNeeded()
         configuration = .session(session)
@@ -124,10 +155,61 @@ final class YardGameStore: ObservableObject {
         resetRound()
     }
 
+    func canUseTool(_ toolID: GameToolID) -> Bool {
+        guard case .playing = phase, helperToolsAllowed else {
+            return false
+        }
+
+        switch toolID {
+        case .levelingHammer:
+            return !blocks.isEmpty
+        case .safetyNet:
+            return !safetyNetArmed
+        case .foundationBooster:
+            return foundationAssistDropsRemaining == 0 && height < 7
+        case .craneSlowdown:
+            return craneSlowdownDropsRemaining == 0
+        }
+    }
+
+    @discardableResult
+    func useTool(_ toolID: GameToolID) -> YardToolUseResult {
+        guard case .playing = phase else {
+            return .unavailable("Finish or restart the current build before using a tool.")
+        }
+
+        guard helperToolsAllowed else {
+            return .unavailable("Helper tools are restricted for this order.")
+        }
+
+        guard canUseTool(toolID) else {
+            return .unavailable(unavailableToolMessage(for: toolID))
+        }
+
+        switch toolID {
+        case .levelingHammer:
+            levelLastBlock()
+            registerToolUse(toolID, message: "Leveling Hammer straightened the last block.")
+        case .safetyNet:
+            safetyNetArmed = true
+            registerToolUse(toolID, message: "Safety Net armed for the next failed drop.")
+        case .foundationBooster:
+            foundationAssistDropsRemaining = 4
+            registerToolUse(toolID, message: "Foundation Booster is protecting the next four drops.")
+        case .craneSlowdown:
+            craneSlowdownDropsRemaining = 5
+            registerToolUse(toolID, message: "Crane movement slowed for the next five drops.")
+        }
+
+        return .applied(activeToolMessage ?? "Tool applied.")
+    }
+
     func craneOffset(stageWidth: CGFloat, at date: Date) -> CGFloat {
         let travel = max(40, (stageWidth - nextPiece.width) * 0.37)
         let time = CGFloat(date.timeIntervalSinceReferenceDate)
-        let speed = 0.72 + min(CGFloat(height) * 0.026, 0.44) + abs(wind) * 0.035
+        let craneModifier = configuration.dailyModifier?.craneSpeedMultiplier ?? 1
+        let slowdownMultiplier: CGFloat = craneSlowdownDropsRemaining > 0 ? 0.56 : 1
+        let speed = (0.72 + min(CGFloat(height) * 0.026, 0.44) + abs(wind) * 0.035) * craneModifier * slowdownMultiplier
         let phaseOffset = CGFloat(height) * 0.58 + CGFloat(configuration.contractIndex) * 0.31
         let drift = wind * 12
         return sin(time * speed + phaseOffset) * travel + drift
@@ -150,38 +232,57 @@ final class YardGameStore: ObservableObject {
     private func placeCurrentBlock(centerOffset: CGFloat) {
         guard case .playing = phase else { return }
 
-        let metrics = placementMetrics(for: nextPiece, centerOffset: centerOffset)
+        var metrics = placementMetrics(for: nextPiece, centerOffset: centerOffset)
+        var placementCenter = centerOffset
+        var placementQuality = metrics.quality
+        var feedbackMessage = metrics.feedbackMessage
+        var safetyNetCaughtDrop = false
+
+        if mode != .zen, metrics.failed, safetyNetArmed {
+            safetyNetArmed = false
+            safetyNetCaughtDrop = true
+            placementCenter = blocks.last?.centerOffset ?? 0
+            metrics = placementMetrics(for: nextPiece, centerOffset: placementCenter)
+            placementQuality = .good
+            feedbackMessage = "Safety Net caught the drop"
+            activeToolMessage = "Safety Net used. The tower is still standing."
+        }
+
         let placed = YardPlacedPiece(
             width: nextPiece.width,
             height: nextPiece.height,
             weight: nextPiece.weight,
             material: nextPiece.material,
             kind: nextPiece.kind,
-            centerOffset: centerOffset,
-            perfect: metrics.quality == .perfect,
-            quality: metrics.quality
+            centerOffset: placementCenter,
+            perfect: placementQuality == .perfect,
+            quality: placementQuality
         )
 
         blocks.append(placed)
-        trackTool(nextPiece.material.label)
-        perfectBlocks += metrics.quality == .perfect ? 1 : 0
-        score += scoreForPlacement(normalizedOffset: metrics.normalizedOffset, quality: metrics.quality)
-        coins += coinsForPlacement(normalizedOffset: metrics.normalizedOffset, quality: metrics.quality)
+        perfectBlocks += placementQuality == .perfect ? 1 : 0
+        score += scoreForPlacement(normalizedOffset: metrics.normalizedOffset, quality: placementQuality)
+        coins += coinsForPlacement(normalizedOffset: metrics.normalizedOffset, quality: placementQuality)
         instability = mode == .zen ? min(metrics.instability, 2.15) : metrics.instability
         lean = mode == .zen ? min(max(metrics.lean, -1.2), 1.2) : metrics.lean
         lastPlacementFeedback = YardPlacementFeedback(
-            quality: metrics.quality,
-            message: metrics.feedbackMessage,
+            quality: placementQuality,
+            message: feedbackMessage,
             stabilityLevel: tiltDangerLevel
         )
+        consumeActiveToolCharges()
 
-        if mode != .zen, metrics.failed {
+        if mode != .zen, metrics.failed, !safetyNetCaughtDrop {
             finish(.lost(reason: metrics.reason), outcome: .defeat)
             return
         }
 
         if mode == .contracts, let targetHeight, height >= targetHeight {
-            coins += configuration.coinReward + perfectBlocks
+            let modifierBonus = configuration.dailyModifier?.completionBonus(
+                perfectBlocks: perfectBlocks,
+                helperToolUses: usedToolIDs.count
+            ) ?? 0
+            coins += perfectBlocks + modifierBonus
             score += 80 + configuration.targetHeight * 8
             finish(.won, outcome: .victory)
             return
@@ -199,7 +300,11 @@ final class YardGameStore: ObservableObject {
         perfectBlocks = 0
         instability = 0
         lean = 0
-        usedTools = ["Yard Crane"]
+        usedToolIDs = []
+        safetyNetArmed = false
+        foundationAssistDropsRemaining = 0
+        craneSlowdownDropsRemaining = 0
+        activeToolMessage = nil
         lastPlacementFeedback = nil
         wind = windForHeight(0)
         nextPiece = makePiece(for: 0)
@@ -220,7 +325,10 @@ final class YardGameStore: ObservableObject {
         let previousCenter = blocks.last?.centerOffset ?? 0
         let previousWidth = blocks.last?.width ?? 164
         let offsetFromSupport = centerOffset - previousCenter
-        let earlyAssist = max(0, 1 - CGFloat(blocks.count) / 7)
+        let baseEarlyAssist = max(0, 1 - CGFloat(blocks.count) / 7)
+        let activeFoundationAssist: CGFloat = foundationAssistDropsRemaining > 0 ? 0.22 : 0
+        let dailyFoundationAssist = blocks.count < 4 ? (configuration.dailyModifier?.foundationAssist ?? 0) : 0
+        let earlyAssist = min(1.25, baseEarlyAssist + activeFoundationAssist + dailyFoundationAssist)
         let supportSpan = max(42, min(previousWidth, piece.width) * (0.62 + earlyAssist * 0.12))
         let normalizedOffset = abs(offsetFromSupport) / supportSpan
         let perfectLimit = max(7, piece.width * (0.07 + earlyAssist * 0.02))
@@ -300,7 +408,7 @@ final class YardGameStore: ObservableObject {
 
     private func coinsForPlacement(normalizedOffset: CGFloat, quality: YardPlacementQuality) -> Int {
         if quality == .perfect {
-            return 4
+            return 4 + (configuration.dailyModifier?.perfectPlacementCoinBonus ?? 0)
         }
 
         return quality == .good ? 2 : 1
@@ -406,7 +514,15 @@ final class YardGameStore: ObservableObject {
     }
 
     private func makeResult(outcome: YardResultOutcome) -> YardGameResult {
-        YardGameResult(
+        let rating = YardBuildRating.evaluate(
+            height: height,
+            perfectBlocks: perfectBlocks,
+            dangerLevel: tiltDangerLevel,
+            helperToolUses: usedToolIDs.count,
+            completed: outcome == .victory
+        )
+
+        return YardGameResult(
             id: UUID(),
             date: Date(),
             mode: mode,
@@ -414,15 +530,70 @@ final class YardGameStore: ObservableObject {
             height: height,
             perfectBlocks: perfectBlocks,
             usedTools: usedTools,
+            usedToolIDs: usedToolIDs,
             coins: coins,
             score: score,
-            outcome: outcome
+            outcome: outcome,
+            rating: rating
         )
     }
 
-    private func trackTool(_ tool: String) {
-        guard !usedTools.contains(tool) else { return }
-        usedTools.append(tool)
+    private func registerToolUse(_ toolID: GameToolID, message: String) {
+        usedToolIDs.append(toolID)
+        activeToolMessage = message
+    }
+
+    private func levelLastBlock() {
+        guard let lastIndex = blocks.indices.last else { return }
+
+        let supportCenter = lastIndex > blocks.startIndex ? blocks[lastIndex - 1].centerOffset : 0
+        let oldOffset = blocks[lastIndex].centerOffset
+        blocks[lastIndex].centerOffset = supportCenter + (oldOffset - supportCenter) * 0.32
+        if blocks[lastIndex].quality == .risky {
+            blocks[lastIndex].quality = .good
+            blocks[lastIndex].perfect = false
+        }
+        recalibrateTowerBalance()
+    }
+
+    private func recalibrateTowerBalance() {
+        guard !blocks.isEmpty else {
+            instability = 0
+            lean = 0
+            return
+        }
+
+        let totalWeight = blocks.reduce(CGFloat.zero) { $0 + $1.weight }
+        let centerOfMass = blocks.reduce(CGFloat.zero) { partial, block in
+            partial + block.centerOffset * block.weight
+        } / max(0.1, totalWeight)
+        let baseWidth = max(96, blocks.first?.width ?? 164)
+        let correctedLean = centerOfMass / (baseWidth * 0.72) + wind * 0.045
+        lean = min(1.2, max(-1.2, correctedLean))
+        instability = min(3.05, max(0, instability * 0.54 + abs(lean) * 0.16))
+    }
+
+    private func consumeActiveToolCharges() {
+        if foundationAssistDropsRemaining > 0 {
+            foundationAssistDropsRemaining -= 1
+        }
+
+        if craneSlowdownDropsRemaining > 0 {
+            craneSlowdownDropsRemaining -= 1
+        }
+    }
+
+    private func unavailableToolMessage(for toolID: GameToolID) -> String {
+        switch toolID {
+        case .levelingHammer:
+            return "Place a block before using the Leveling Hammer."
+        case .safetyNet:
+            return "A Safety Net is already armed."
+        case .foundationBooster:
+            return "Foundation Booster is only useful during the early build."
+        case .craneSlowdown:
+            return "Crane Slowdown is already active."
+        }
     }
 
     private func recordZenSnapshotIfNeeded() {

@@ -149,6 +149,7 @@ struct TowerResultCard: Identifiable, Codable, Hashable {
     var score: Int
     var perfectBlocks: Int
     var toolsUsed: Int
+    var ratingStars: Int?
 
     init(
         id: UUID = UUID(),
@@ -161,7 +162,8 @@ struct TowerResultCard: Identifiable, Codable, Hashable {
         outcome: TowerBuildOutcome,
         score: Int,
         perfectBlocks: Int,
-        toolsUsed: Int
+        toolsUsed: Int,
+        ratingStars: Int? = nil
     ) {
         self.id = id
         self.mode = mode
@@ -174,6 +176,7 @@ struct TowerResultCard: Identifiable, Codable, Hashable {
         self.score = score
         self.perfectBlocks = perfectBlocks
         self.toolsUsed = toolsUsed
+        self.ratingStars = ratingStars.map { min(3, max(0, $0)) }
     }
 }
 

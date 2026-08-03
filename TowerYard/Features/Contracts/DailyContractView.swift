@@ -43,6 +43,8 @@ struct DailyContractView: View {
                         DetailPill(title: "Best \(progress.bestHeight)", systemImage: "chart.bar.fill", color: .green)
                     }
 
+                    DailyModifierCard(modifier: dailyContract.modifier)
+
                     Button {
                         onLaunch(dailyContract)
                     } label: {
@@ -72,6 +74,31 @@ struct DailyContractView: View {
         .appShellScrollContentBottomClearance()
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Daily")
+    }
+}
+
+private struct DailyModifierCard: View {
+    let modifier: DailyBuildModifier
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: modifier.systemImage)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.orange)
+                .frame(width: 34, height: 34)
+                .background(Color.orange.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Daily Condition: \(modifier.title)")
+                    .font(.subheadline.weight(.bold))
+                Text(modifier.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

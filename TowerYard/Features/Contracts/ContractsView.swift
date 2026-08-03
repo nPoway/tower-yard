@@ -25,6 +25,7 @@ struct ContractsView: View {
                         contract: contract,
                         status: progressStore.status(for: contract),
                         bestHeight: progressStore.bestHeight(for: contract),
+                        bestRating: progressStore.bestRating(for: contract),
                         onLaunch: { onLaunch(contract) }
                     )
                 }
@@ -80,6 +81,7 @@ private struct ContractRow: View {
     let contract: TowerContract
     let status: ContractStatus
     let bestHeight: Int
+    let bestRating: Int
     let onLaunch: () -> Void
 
     private let detailColumns = [
@@ -156,7 +158,9 @@ private struct ContractRow: View {
     }
 
     private var bestResultText: String {
-        bestHeight > 0 ? "\(bestHeight) floors" : "No run"
+        guard bestHeight > 0 else { return "No run" }
+        let stars = bestRating > 0 ? " · \(String(repeating: "★", count: bestRating))" : ""
+        return "\(bestHeight) floors\(stars)"
     }
 
     private var buttonTitle: String {

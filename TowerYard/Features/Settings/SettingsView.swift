@@ -40,8 +40,8 @@ struct SettingsView: View {
 }
 
 private enum TowerYardLegalLinks {
-    static let privacyPolicy = AppConfiguration.privacyPolicyURL
-    static let support = AppConfiguration.supportURL
+    static let privacyPolicy = URL(string: "https://toweryardskylinebuilder.com/privacy-policy.html")!
+    static let support = URL(string: "https://toweryardskylinebuilder.com/support.html")!
 }
 
 private struct SettingsLegalLinkRow: View {

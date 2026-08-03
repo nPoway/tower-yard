@@ -90,6 +90,10 @@ private struct JournalEntryRow: View {
                 JournalMetric(icon: "bitcoinsign.circle.fill", title: "Reward", value: "\(entry.rewardCoins)")
             }
 
+            if let ratingStars = entry.ratingStars, ratingStars > 0 {
+                JournalRatingRow(entry: entry, stars: ratingStars)
+            }
+
             Text(entry.mode.title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -121,6 +125,39 @@ private struct JournalEntryRow: View {
         case .abandoned:
             return .orange
         }
+    }
+}
+
+private struct JournalRatingRow: View {
+    let entry: JournalEntry
+    let stars: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Label(
+                String(repeating: "★", count: stars),
+                systemImage: "star.fill"
+            )
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.orange)
+
+            if let precision = entry.precisionScore,
+               let stability = entry.stabilityScore,
+               let efficiency = entry.efficiencyScore {
+                Text("P \(precision) · S \(stability) · E \(efficiency)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Build rating")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

@@ -120,6 +120,8 @@ struct YardGameConfiguration: Equatable {
     var targetHeight: Int
     var weather: ContractWeather
     var material: ContractMaterialStyle
+    var dailyModifier: DailyBuildModifier?
+    var helperToolsAllowed: Bool
     var coinReward: Int
     var blueprintWidths: [Int]?
 
@@ -131,6 +133,8 @@ struct YardGameConfiguration: Equatable {
             targetHeight: session.targetHeight,
             weather: session.weather,
             material: session.material,
+            dailyModifier: session.dailyModifier,
+            helperToolsAllowed: session.helperToolsAllowed,
             coinReward: session.coinReward,
             blueprintWidths: session.blueprintWidths
         )
@@ -233,6 +237,80 @@ enum YardResultOutcome: String, Codable {
     case zenSnapshot
 }
 
+struct YardBuildRating: Codable, Equatable {
+    let precision: Int
+    let stability: Int
+    let efficiency: Int
+    let stars: Int
+
+    var title: String {
+        switch stars {
+        case 3: "Outstanding Build"
+        case 2: "Strong Build"
+        case 1: "Completed Build"
+        default: "No Rating"
+        }
+    }
+
+    var starsLabel: String {
+        guard stars > 0 else { return "Unrated" }
+        return String(repeating: "★", count: stars) + String(repeating: "☆", count: max(0, 3 - stars))
+    }
+
+    static func evaluate(
+        height: Int,
+        perfectBlocks: Int,
+        dangerLevel: CGFloat,
+        helperToolUses: Int,
+        completed: Bool
+    ) -> YardBuildRating {
+        guard completed, height > 0 else {
+            return YardBuildRating(precision: 0, stability: 0, efficiency: 0, stars: 0)
+        }
+
+        let perfectRatio = Double(perfectBlocks) / Double(max(1, height))
+        let precision = min(100, max(35, Int((42 + perfectRatio * 58).rounded())))
+        let stability = min(100, max(0, Int((100 - Double(dangerLevel) * 72).rounded())))
+        let efficiency = min(100, max(0, 100 - helperToolUses * 18))
+        let total = (precision + stability + efficiency) / 3
+        let stars: Int
+        switch total {
+        case 86...:
+            stars = 3
+        case 65...:
+            stars = 2
+        default:
+            stars = 1
+        }
+
+        return YardBuildRating(
+            precision: precision,
+            stability: stability,
+            efficiency: efficiency,
+            stars: stars
+        )
+    }
+}
+
+enum YardToolUseResult: Equatable {
+    case applied(String)
+    case unavailable(String)
+
+    var message: String {
+        switch self {
+        case .applied(let message), .unavailable(let message):
+            message
+        }
+    }
+
+    var didApply: Bool {
+        if case .applied = self {
+            return true
+        }
+        return false
+    }
+}
+
 struct YardGameResult: Codable, Equatable, Identifiable {
     var id: UUID
     var date: Date
@@ -241,9 +319,19 @@ struct YardGameResult: Codable, Equatable, Identifiable {
     var height: Int
     var perfectBlocks: Int
     var usedTools: [String]
+    var usedToolIDs: [GameToolID]?
     var coins: Int
     var score: Int
     var outcome: YardResultOutcome
+    var rating: YardBuildRating?
+
+    var helperToolUseCount: Int {
+        usedToolIDs?.count ?? 0
+    }
+
+    var usedHelperTools: Bool {
+        helperToolUseCount > 0
+    }
 }
 
 extension GameSession {
@@ -255,6 +343,24 @@ extension GameSession {
             0
         case .blueprint:
             0
+        }
+    }
+
+    var dailyModifier: DailyBuildModifier? {
+        if case .daily(let contract) = self {
+            return contract.modifier
+        }
+        return nil
+    }
+
+    var helperToolsAllowed: Bool {
+        switch self {
+        case .contract(let contract):
+            return !contract.rule.localizedCaseInsensitiveContains("without helper tools")
+        case .daily(let contract):
+            return contract.modifier.allowsHelperTools
+        case .blueprint:
+            return true
         }
     }
 }

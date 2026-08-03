@@ -12,6 +12,8 @@ struct TowerGameView: View {
     @ObservedObject var game: YardGameStore
     var progressOutcome: RunOutcome?
     var canAdvanceContract: Bool
+    var availableTools: [GameToolState] = []
+    var onUseTool: (GameToolID) -> Void = { _ in }
     var onResult: (YardGameResult) -> Void
     var onNextContract: () -> Void
 
@@ -21,6 +23,13 @@ struct TowerGameView: View {
 
             VStack(spacing: 10) {
                 topBar
+                if shouldShowToolShelf {
+                    GameToolShelf(
+                        game: game,
+                        tools: availableTools,
+                        onUseTool: onUseTool
+                    )
+                }
                 TowerPlayfield(game: game)
             }
             .padding(.horizontal, 16)
@@ -34,6 +43,10 @@ struct TowerGameView: View {
             guard let result = game.lastResult else { return }
             onResult(result)
         }
+    }
+
+    private var shouldShowToolShelf: Bool {
+        !game.helperToolsAllowed || game.configuration.dailyModifier != nil || availableTools.contains { $0.count > 0 }
     }
 
     private var topBar: some View {
@@ -123,6 +136,114 @@ struct TowerGameView: View {
                 .minimumScaleFactor(0.72)
         }
         .frame(minWidth: 54, alignment: .leading)
+    }
+}
+
+private struct GameToolShelf: View {
+    @ObservedObject var game: YardGameStore
+    let tools: [GameToolState]
+    let onUseTool: (GameToolID) -> Void
+
+    private var ownedTools: [GameToolState] {
+        tools.filter { $0.count > 0 }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let modifier = game.configuration.dailyModifier {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: modifier.systemImage)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(TowerYardTheme.constructionYellow)
+                        .frame(width: 24, height: 24)
+                        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Daily Condition: \(modifier.title)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                        Text(modifier.detail)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            if !game.helperToolsAllowed {
+                Label("Helper tools are restricted for this order.", systemImage: "checkmark.shield.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(TowerYardTheme.constructionYellow)
+            } else if !ownedTools.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(ownedTools) { tool in
+                        ActiveToolButton(
+                            tool: tool,
+                            isEnabled: game.canUseTool(tool.definition.id),
+                            action: { onUseTool(tool.definition.id) }
+                        )
+                    }
+                }
+            } else if game.configuration.dailyModifier != nil {
+                Text("No helper tools in your kit. Buy one-use tools from the Shop before a build.")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.68))
+            }
+
+            if let status = game.activeToolStatus {
+                Label(status, systemImage: "wrench.and.screwdriver.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(TowerYardTheme.constructionYellow)
+                    .lineLimit(2)
+            }
+        }
+        .padding(10)
+        .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(.white.opacity(0.14), lineWidth: 1)
+        }
+    }
+}
+
+private struct ActiveToolButton: View {
+    let tool: GameToolState
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: tool.definition.systemImage)
+                        .font(.caption.weight(.bold))
+                        .frame(width: 30, height: 26)
+
+                    Text("\(tool.count)")
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .foregroundStyle(TowerYardTheme.warningStripe)
+                        .frame(minWidth: 15, minHeight: 15)
+                        .background(TowerYardTheme.constructionYellow, in: Circle())
+                        .offset(x: 5, y: -4)
+                }
+
+                Text(tool.definition.shortName)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(
+                isEnabled ? TowerYardTheme.beamBlue.opacity(0.34) : .white.opacity(0.08),
+                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.46)
+        .accessibilityLabel("Use \(tool.definition.name), \(tool.count) remaining")
     }
 }
 
@@ -1038,10 +1159,14 @@ private struct ResultOverlay: View {
                 HStack(spacing: 12) {
                     resultStat("Height", "\(game.height)")
                     resultStat("Perfect", "\(game.perfectBlocks)")
-                    resultStat("Coins", "\(game.coins)")
+                    resultStat("Run Coins", "\(game.coins)")
                 }
 
-                Text("Used: \(game.usedTools.joined(separator: ", "))")
+                if let rating = game.lastResult?.rating, rating.stars > 0 {
+                    BuildRatingSummary(rating: rating)
+                }
+
+                Text(toolUsageLabel)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.68))
                     .lineLimit(2)
@@ -1087,6 +1212,13 @@ private struct ResultOverlay: View {
         }
     }
 
+    private var toolUsageLabel: String {
+        guard !game.usedTools.isEmpty else {
+            return "No helper tools used"
+        }
+        return "Used: \(game.usedTools.joined(separator: ", "))"
+    }
+
     private func resultStat(_ title: String, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
@@ -1098,6 +1230,53 @@ private struct ResultOverlay: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
         .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct BuildRatingSummary: View {
+    let rating: YardBuildRating
+
+    var body: some View {
+        VStack(spacing: 7) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("BUILD RATING")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.62))
+                    Text(rating.title)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+
+                Spacer()
+
+                Text(rating.starsLabel)
+                    .font(.title3.weight(.black))
+                    .foregroundStyle(TowerYardTheme.constructionYellow)
+            }
+
+            HStack(spacing: 8) {
+                ratingMetric("Precision", rating.precision)
+                ratingMetric("Stability", rating.stability)
+                ratingMetric("Efficiency", rating.efficiency)
+            }
+        }
+        .padding(10)
+        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func ratingMetric(_ title: String, _ value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text("\(value)")
+                .font(.caption.weight(.black))
+                .foregroundStyle(.white)
+            Text(title.uppercased())
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.58))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

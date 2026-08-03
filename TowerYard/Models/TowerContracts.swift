@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 enum ContractWeather: String, CaseIterable, Codable, Hashable, Identifiable {
@@ -60,6 +61,75 @@ enum ContractMaterialStyle: String, CaseIterable, Codable, Hashable, Identifiabl
     }
 }
 
+enum DailyBuildModifier: String, CaseIterable, Codable, Hashable, Identifiable {
+    case precisionPayday
+    case safetyInspection
+    case reinforcedFoundation
+    case fastCrane
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .precisionPayday: "Precision Payday"
+        case .safetyInspection: "Safety Inspection"
+        case .reinforcedFoundation: "Reinforced Foundation"
+        case .fastCrane: "Fast Crane"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .precisionPayday:
+            "Perfect placements earn extra run coins."
+        case .safetyInspection:
+            "Helper tools are not allowed on this site."
+        case .reinforcedFoundation:
+            "The first four drops get extra foundation tolerance."
+        case .fastCrane:
+            "The crane moves faster for the whole order."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .precisionPayday: "scope"
+        case .safetyInspection: "checkmark.shield.fill"
+        case .reinforcedFoundation: "building.columns.fill"
+        case .fastCrane: "bolt.fill"
+        }
+    }
+
+    var allowsHelperTools: Bool {
+        self != .safetyInspection
+    }
+
+    var perfectPlacementCoinBonus: Int {
+        self == .precisionPayday ? 2 : 0
+    }
+
+    var foundationAssist: CGFloat {
+        self == .reinforcedFoundation ? 0.18 : 0
+    }
+
+    var craneSpeedMultiplier: CGFloat {
+        self == .fastCrane ? 1.22 : 1
+    }
+
+    func completionBonus(perfectBlocks: Int, helperToolUses: Int) -> Int {
+        switch self {
+        case .precisionPayday:
+            return perfectBlocks >= 3 ? 28 : 0
+        case .safetyInspection:
+            return helperToolUses == 0 ? 35 : 0
+        case .reinforcedFoundation:
+            return 22
+        case .fastCrane:
+            return 25
+        }
+    }
+}
+
 struct TowerContract: Identifiable, Codable, Hashable {
     let id: Int
     let title: String
@@ -107,6 +177,7 @@ struct DailyContract: Identifiable, Codable, Hashable {
     let targetHeight: Int
     let weather: ContractWeather
     let material: ContractMaterialStyle
+    let modifier: DailyBuildModifier
     let coinReward: Int
     let goal: String
 
@@ -117,6 +188,7 @@ struct DailyContract: Identifiable, Codable, Hashable {
         let material = ContractMaterialStyle.allCases[generator.next(upperBound: ContractMaterialStyle.allCases.count)]
         let targetHeight = 9 + generator.next(upperBound: 15)
         let reward = 140 + targetHeight * 9 + generator.next(upperBound: 45)
+        let modifier = DailyBuildModifier.allCases[generator.next(upperBound: DailyBuildModifier.allCases.count)]
 
         return DailyContract(
             id: "daily-\(key)",
@@ -125,6 +197,7 @@ struct DailyContract: Identifiable, Codable, Hashable {
             targetHeight: targetHeight,
             weather: weather,
             material: material,
+            modifier: modifier,
             coinReward: reward,
             goal: "Build \(targetHeight) floors before the day ends"
         )

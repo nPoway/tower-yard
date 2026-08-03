@@ -120,8 +120,19 @@ final class TowerYardProfileStore: ObservableObject {
         }
     }
 
-    func recordTowerResult(_ result: TowerResultCard) {
+    func recordTowerResult(
+        _ result: TowerResultCard,
+        walletCoins: Int? = nil,
+        equippedSkin: String? = nil
+    ) {
         profile.apply(result: result)
+        if let walletCoins {
+            profile.coins = max(0, walletCoins)
+        }
+        profile.equippedMaterial = result.material
+        if let equippedSkin {
+            profile.equippedSkin = equippedSkin
+        }
         towerResults.removeAll { $0.id == result.id }
         towerResults.insert(result, at: 0)
 

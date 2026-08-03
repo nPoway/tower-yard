@@ -26,6 +26,7 @@ struct TowerProgress: Codable, Equatable {
     var unlockedContractID: Int = 1
     var completedContractIDs: Set<Int> = []
     var bestHeightsByContractID: [Int: Int] = [:]
+    var bestRatingStarsByContractID: [Int: Int] = [:]
     var contractRunsPlayed: Int = 0
     var highestBuiltHeight: Int = 0
     var dailyRecordsByDateKey: [String: DailyProgress] = [:]
@@ -43,6 +44,7 @@ struct TowerProgress: Codable, Equatable {
         case unlockedContractID
         case completedContractIDs
         case bestHeightsByContractID
+        case bestRatingStarsByContractID
         case contractRunsPlayed
         case highestBuiltHeight
         case dailyRecordsByDateKey
@@ -60,6 +62,7 @@ struct TowerProgress: Codable, Equatable {
         unlockedContractID = try container.decodeIfPresent(Int.self, forKey: .unlockedContractID) ?? 1
         completedContractIDs = try container.decodeIfPresent(Set<Int>.self, forKey: .completedContractIDs) ?? []
         bestHeightsByContractID = try container.decodeIfPresent([Int: Int].self, forKey: .bestHeightsByContractID) ?? [:]
+        bestRatingStarsByContractID = try container.decodeIfPresent([Int: Int].self, forKey: .bestRatingStarsByContractID) ?? [:]
         contractRunsPlayed = try container.decodeIfPresent(Int.self, forKey: .contractRunsPlayed) ?? 0
         highestBuiltHeight = try container.decodeIfPresent(Int.self, forKey: .highestBuiltHeight) ?? 0
         dailyRecordsByDateKey = try container.decodeIfPresent([String: DailyProgress].self, forKey: .dailyRecordsByDateKey) ?? [:]
@@ -78,6 +81,7 @@ struct TowerProgress: Codable, Equatable {
         try container.encode(unlockedContractID, forKey: .unlockedContractID)
         try container.encode(completedContractIDs, forKey: .completedContractIDs)
         try container.encode(bestHeightsByContractID, forKey: .bestHeightsByContractID)
+        try container.encode(bestRatingStarsByContractID, forKey: .bestRatingStarsByContractID)
         try container.encode(contractRunsPlayed, forKey: .contractRunsPlayed)
         try container.encode(highestBuiltHeight, forKey: .highestBuiltHeight)
         try container.encode(dailyRecordsByDateKey, forKey: .dailyRecordsByDateKey)
@@ -94,6 +98,7 @@ struct TowerProgress: Codable, Equatable {
         unlockedContractID = max(1, unlockedContractID)
         contractRunsPlayed = max(0, contractRunsPlayed)
         highestBuiltHeight = max(0, highestBuiltHeight)
+        bestRatingStarsByContractID = bestRatingStarsByContractID.mapValues { min(3, max(0, $0)) }
         journalEntries = Array(journalEntries.prefix(20))
         recordedGameResultIDs = Array(recordedGameResultIDs.suffix(100))
 
@@ -263,6 +268,10 @@ final class TowerProgressStore: ObservableObject {
         progress.bestHeightsByContractID[contract.id] ?? 0
     }
 
+    func bestRating(for contract: TowerContract) -> Int {
+        progress.bestRatingStarsByContractID[contract.id] ?? 0
+    }
+
     func dailyProgress(for contract: DailyContract) -> DailyProgress {
         progress.dailyRecordsByDateKey[contract.dateKey] ?? DailyProgress()
     }
@@ -271,22 +280,93 @@ final class TowerProgressStore: ObservableObject {
         progress.blueprintRecordsByID[challenge.id] ?? BlueprintProgress()
     }
 
-    func recordResult(for session: GameSession, height: Int, completed: Bool? = nil) -> RunOutcome {
+    func recordResult(
+        for session: GameSession,
+        height: Int,
+        completed: Bool? = nil,
+        resultID: UUID = UUID(),
+        completedAt: Date = Date(),
+        perfectBlocks: Int = 0,
+        usedHelperTools: Bool = true,
+        ratingStars: Int? = nil,
+        precisionScore: Int? = nil,
+        stabilityScore: Int? = nil,
+        efficiencyScore: Int? = nil,
+        runRewardCoins: Int = 0
+    ) -> RunOutcome {
         switch session {
         case .contract(let contract):
-            recordContractResult(contract, height: height, completed: completed)
+            recordContractResult(
+                contract,
+                height: height,
+                completed: completed,
+                resultID: resultID,
+                completedAt: completedAt,
+                perfectBlocks: perfectBlocks,
+                usedHelperTools: usedHelperTools,
+                ratingStars: ratingStars,
+                precisionScore: precisionScore,
+                stabilityScore: stabilityScore,
+                efficiencyScore: efficiencyScore,
+                runRewardCoins: runRewardCoins
+            )
         case .daily(let contract):
-            recordDailyResult(contract, height: height, completed: completed)
+            recordDailyResult(
+                contract,
+                height: height,
+                completed: completed,
+                resultID: resultID,
+                completedAt: completedAt,
+                perfectBlocks: perfectBlocks,
+                usedHelperTools: usedHelperTools,
+                ratingStars: ratingStars,
+                precisionScore: precisionScore,
+                stabilityScore: stabilityScore,
+                efficiencyScore: efficiencyScore,
+                runRewardCoins: runRewardCoins
+            )
         case .blueprint(let challenge):
-            recordBlueprintResult(challenge, height: height, completed: completed)
+            recordBlueprintResult(
+                challenge,
+                height: height,
+                completed: completed,
+                resultID: resultID,
+                completedAt: completedAt,
+                perfectBlocks: perfectBlocks,
+                usedHelperTools: usedHelperTools,
+                ratingStars: ratingStars,
+                precisionScore: precisionScore,
+                stabilityScore: stabilityScore,
+                efficiencyScore: efficiencyScore,
+                runRewardCoins: runRewardCoins
+            )
         }
     }
 
-    private func recordContractResult(_ contract: TowerContract, height: Int, completed: Bool?) -> RunOutcome {
+    private func recordContractResult(
+        _ contract: TowerContract,
+        height: Int,
+        completed: Bool?,
+        resultID: UUID,
+        completedAt: Date,
+        perfectBlocks: Int,
+        usedHelperTools: Bool,
+        ratingStars: Int?,
+        precisionScore: Int?,
+        stabilityScore: Int?,
+        efficiencyScore: Int?,
+        runRewardCoins: Int
+    ) -> RunOutcome {
         var updated = progress
         updated.contractRunsPlayed += 1
         updated.highestBuiltHeight = max(updated.highestBuiltHeight, height)
         updated.bestHeightsByContractID[contract.id] = max(updated.bestHeightsByContractID[contract.id] ?? 0, height)
+        if let ratingStars {
+            updated.bestRatingStarsByContractID[contract.id] = max(
+                updated.bestRatingStarsByContractID[contract.id] ?? 0,
+                ratingStars
+            )
+        }
 
         let didComplete = completed ?? (height >= contract.targetHeight)
         let alreadyCompleted = updated.completedContractIDs.contains(contract.id)
@@ -304,29 +384,60 @@ final class TowerProgressStore: ObservableObject {
             }
         }
 
+        let runReward = didComplete ? max(0, runRewardCoins) : 0
+
         let result = gameResult(
             for: .contract(contract),
             height: height,
-            rewardCoins: coinsAwarded,
-            completed: didComplete
+            rewardCoins: coinsAwarded + runReward,
+            completed: didComplete,
+            id: resultID,
+            completedAt: completedAt,
+            perfectBlocks: perfectBlocks,
+            toolsUsed: usedHelperTools,
+            ratingStars: ratingStars,
+            precisionScore: precisionScore,
+            stabilityScore: stabilityScore,
+            efficiencyScore: efficiencyScore
         )
         let summary = applyConstructionResult(result, to: &updated)
         progress = updated
 
         if didComplete {
-            let message = alreadyCompleted ? "Best height saved. Reward was already claimed." : rewardMessage(prefix: "Next contract unlocked.", coinsAwarded: coinsAwarded, summary: summary)
-            return RunOutcome(title: "Contract Complete", message: message, completed: true, coinsAwarded: coinsAwarded)
+            let message = alreadyCompleted
+                ? replayMessage(runReward: runReward, summary: summary)
+                : rewardMessage(prefix: "Next contract unlocked.", coinsAwarded: result.rewardCoins, summary: summary)
+            return RunOutcome(
+                title: "Contract Complete",
+                message: message,
+                completed: true,
+                coinsAwarded: result.rewardCoins + summary.achievementRewardCoins
+            )
         }
 
+        let failureMessage = "Best height saved. Reach \(contract.targetHeight) floors to complete this contract."
         return RunOutcome(
             title: "Contract Failed",
-            message: "Best height saved. Reach \(contract.targetHeight) floors to complete this contract.",
+            message: messageWithAchievementReward(failureMessage, summary: summary),
             completed: false,
-            coinsAwarded: 0
+            coinsAwarded: summary.achievementRewardCoins
         )
     }
 
-    private func recordDailyResult(_ contract: DailyContract, height: Int, completed: Bool?) -> RunOutcome {
+    private func recordDailyResult(
+        _ contract: DailyContract,
+        height: Int,
+        completed: Bool?,
+        resultID: UUID,
+        completedAt: Date,
+        perfectBlocks: Int,
+        usedHelperTools: Bool,
+        ratingStars: Int?,
+        precisionScore: Int?,
+        stabilityScore: Int?,
+        efficiencyScore: Int?,
+        runRewardCoins: Int
+    ) -> RunOutcome {
         var updated = progress
         updated.highestBuiltHeight = max(updated.highestBuiltHeight, height)
 
@@ -344,30 +455,61 @@ final class TowerProgressStore: ObservableObject {
             }
         }
 
+        let runReward = didComplete ? max(0, runRewardCoins) : 0
+
         updated.dailyRecordsByDateKey[contract.dateKey] = record
         let result = gameResult(
             for: .daily(contract),
             height: height,
-            rewardCoins: coinsAwarded,
-            completed: didComplete
+            rewardCoins: coinsAwarded + runReward,
+            completed: didComplete,
+            id: resultID,
+            completedAt: completedAt,
+            perfectBlocks: perfectBlocks,
+            toolsUsed: usedHelperTools,
+            ratingStars: ratingStars,
+            precisionScore: precisionScore,
+            stabilityScore: stabilityScore,
+            efficiencyScore: efficiencyScore
         )
         let summary = applyConstructionResult(result, to: &updated)
         progress = updated
 
         if didComplete {
-            let message = alreadyCompleted ? "Daily reward was already claimed today." : rewardMessage(prefix: nil, coinsAwarded: coinsAwarded, summary: summary)
-            return RunOutcome(title: "Daily Complete", message: message, completed: true, coinsAwarded: coinsAwarded)
+            let message = alreadyCompleted
+                ? replayMessage(runReward: runReward, summary: summary)
+                : rewardMessage(prefix: nil, coinsAwarded: result.rewardCoins, summary: summary)
+            return RunOutcome(
+                title: "Daily Complete",
+                message: message,
+                completed: true,
+                coinsAwarded: result.rewardCoins + summary.achievementRewardCoins
+            )
         }
 
+        let failureMessage = "Best daily height saved for \(contract.dateKey)."
         return RunOutcome(
             title: "Daily Failed",
-            message: "Best daily height saved for \(contract.dateKey).",
+            message: messageWithAchievementReward(failureMessage, summary: summary),
             completed: false,
-            coinsAwarded: 0
+            coinsAwarded: summary.achievementRewardCoins
         )
     }
 
-    private func recordBlueprintResult(_ challenge: BlueprintChallenge, height: Int, completed: Bool?) -> RunOutcome {
+    private func recordBlueprintResult(
+        _ challenge: BlueprintChallenge,
+        height: Int,
+        completed: Bool?,
+        resultID: UUID,
+        completedAt: Date,
+        perfectBlocks: Int,
+        usedHelperTools: Bool,
+        ratingStars: Int?,
+        precisionScore: Int?,
+        stabilityScore: Int?,
+        efficiencyScore: Int?,
+        runRewardCoins: Int
+    ) -> RunOutcome {
         var updated = progress
         updated.highestBuiltHeight = max(updated.highestBuiltHeight, height)
 
@@ -385,22 +527,44 @@ final class TowerProgressStore: ObservableObject {
             }
         }
 
+        let runReward = didComplete ? max(0, runRewardCoins) : 0
+
         updated.blueprintRecordsByID[challenge.id] = record
         let result = gameResult(
             for: .blueprint(challenge),
             height: height,
-            rewardCoins: coinsAwarded,
-            completed: didComplete
+            rewardCoins: coinsAwarded + runReward,
+            completed: didComplete,
+            id: resultID,
+            completedAt: completedAt,
+            perfectBlocks: perfectBlocks,
+            toolsUsed: usedHelperTools,
+            ratingStars: ratingStars,
+            precisionScore: precisionScore,
+            stabilityScore: stabilityScore,
+            efficiencyScore: efficiencyScore
         )
         let summary = applyConstructionResult(result, to: &updated)
         progress = updated
 
         if didComplete {
-            let message = alreadyCompleted ? "Reward was already claimed." : rewardMessage(prefix: nil, coinsAwarded: coinsAwarded, summary: summary)
-            return RunOutcome(title: "Legacy Build Complete", message: message, completed: true, coinsAwarded: coinsAwarded)
+            let message = alreadyCompleted
+                ? replayMessage(runReward: runReward, summary: summary)
+                : rewardMessage(prefix: nil, coinsAwarded: result.rewardCoins, summary: summary)
+            return RunOutcome(
+                title: "Legacy Build Complete",
+                message: message,
+                completed: true,
+                coinsAwarded: result.rewardCoins + summary.achievementRewardCoins
+            )
         }
 
-        return RunOutcome(title: "Legacy Build Failed", message: "Best height saved.", completed: false, coinsAwarded: 0)
+        return RunOutcome(
+            title: "Legacy Build Failed",
+            message: messageWithAchievementReward("Best height saved.", summary: summary),
+            completed: false,
+            coinsAwarded: summary.achievementRewardCoins
+        )
     }
 
     @discardableResult
@@ -495,22 +659,36 @@ final class TowerProgressStore: ObservableObject {
         for session: GameSession,
         height: Int,
         rewardCoins: Int,
-        completed: Bool
+        completed: Bool,
+        id: UUID,
+        completedAt: Date,
+        perfectBlocks: Int,
+        toolsUsed: Bool,
+        ratingStars: Int?,
+        precisionScore: Int?,
+        stabilityScore: Int?,
+        efficiencyScore: Int?
     ) -> GameResult {
         GameResult(
+            id: id,
+            completedAt: completedAt,
             mode: gameMode(for: session),
             floors: height,
             heightMeters: Double(height) * 4.2,
             weather: constructionWeather(for: session.weather),
             rewardCoins: rewardCoins,
             outcome: completed ? .completed : .failed,
-            perfectBlocks: 0,
-            toolsUsed: true,
+            perfectBlocks: perfectBlocks,
+            toolsUsed: toolsUsed,
             blueprintMatched: session.blueprintWidths != nil && completed,
             buildingID: buildingID(for: session),
             style: buildingStyle(for: session.material),
             difficulty: difficulty(for: session),
-            timeOfDay: .day
+            timeOfDay: .day,
+            ratingStars: ratingStars,
+            precisionScore: precisionScore,
+            stabilityScore: stabilityScore,
+            efficiencyScore: efficiencyScore
         )
     }
 
@@ -597,6 +775,23 @@ final class TowerProgressStore: ObservableObject {
             return base
         }
         return "\(base) Achievement rewards added: \(summary.achievementRewardCoins)."
+    }
+
+    private func replayMessage(runReward: Int, summary: ConstructionRecordSummary) -> String {
+        let base = runReward > 0
+            ? "Best height saved. Run payout: \(runReward) coins."
+            : "Best height saved. Contract reward was already claimed."
+        guard summary.achievementRewardCoins > 0 else {
+            return base
+        }
+        return "\(base) Achievement rewards added: \(summary.achievementRewardCoins)."
+    }
+
+    private func messageWithAchievementReward(_ message: String, summary: ConstructionRecordSummary) -> String {
+        guard summary.achievementRewardCoins > 0 else {
+            return message
+        }
+        return "\(message) Achievement rewards added: \(summary.achievementRewardCoins)."
     }
 }
 

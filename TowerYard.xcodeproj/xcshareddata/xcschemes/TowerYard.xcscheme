@@ -21,20 +21,6 @@
                ReferencedContainer = "container:TowerYard.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7A1000013001000100000045"
-               BuildableName = "TowerYardNotificationService.appex"
-               BlueprintName = "TowerYardNotificationService"
-               ReferencedContainer = "container:TowerYard.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

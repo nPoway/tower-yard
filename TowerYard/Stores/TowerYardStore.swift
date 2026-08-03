@@ -331,11 +331,16 @@ final class TowerYardStore: ObservableObject {
 
         progress.coins += reward.coins
         progress.totalCoinsEarned += reward.coins
-        progress.completedRuns += 1
-        progress.bestHeight = max(progress.bestHeight, max(0, result.blocksPlaced))
+        recordRunStats(result)
         progress.normalize()
 
         return reward
+    }
+
+    func recordRunStats(_ result: TowerRunResult) {
+        progress.completedRuns += 1
+        progress.bestHeight = max(progress.bestHeight, max(0, result.blocksPlaced))
+        progress.normalize()
     }
 
     @discardableResult

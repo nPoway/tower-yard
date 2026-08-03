@@ -201,6 +201,9 @@ struct TowerResultDetailView: View {
                     YardMetricCard(title: "Weather", value: result.weather.title, footnote: nil, systemImage: "cloud.sun.fill")
                     YardMetricCard(title: "Material", value: result.material, footnote: result.skin.map { "Skin: \($0)" }, systemImage: "shippingbox.fill")
                     YardMetricCard(title: "Result", value: result.outcome.title, footnote: "Score: \(result.score)", systemImage: "flag.checkered")
+                    if let ratingLabel = result.ratingLabel {
+                        YardMetricCard(title: "Build Rating", value: ratingLabel, footnote: result.starLabel, systemImage: "star.fill")
+                    }
                     YardMetricCard(title: "Perfect Blocks", value: "\(result.perfectBlocks)", footnote: "Tools used: \(result.toolsUsed)", systemImage: "square.stack.3d.up.fill")
                 }
             }
@@ -243,6 +246,10 @@ struct TowerResultCompactCard: View {
                 HStack(spacing: 8) {
                     Label(result.outcome.title, systemImage: "flag.fill")
                     Label("\(result.perfectBlocks) perfect", systemImage: "square.stack.3d.up.fill")
+                    if let starLabel = result.starLabel {
+                        Label(starLabel, systemImage: "star.fill")
+                            .foregroundStyle(TowerYardTheme.constructionYellow)
+                    }
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(TowerYardTheme.textSecondary)
@@ -292,9 +299,27 @@ private struct ResultBlueprintCard: View {
                 Text("Score \(result.score)")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(TowerYardTheme.textPrimary)
+
+                if let starLabel = result.starLabel {
+                    Text(starLabel)
+                        .font(.subheadline.weight(.black))
+                        .foregroundStyle(TowerYardTheme.constructionYellow)
+                }
             }
         }
         .yardPanel(stroke: TowerYardTheme.constructionYellow.opacity(0.45))
+    }
+}
+
+private extension TowerResultCard {
+    var ratingLabel: String? {
+        guard let ratingStars, ratingStars > 0 else { return nil }
+        return "\(ratingStars)-Star"
+    }
+
+    var starLabel: String? {
+        guard let ratingStars, ratingStars > 0 else { return nil }
+        return String(repeating: "★", count: ratingStars)
     }
 }
 

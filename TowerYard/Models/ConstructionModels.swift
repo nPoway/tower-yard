@@ -147,6 +147,10 @@ struct GameResult: Codable, Identifiable, Equatable {
     var style: BuildingStyle
     var difficulty: Int
     var timeOfDay: ConstructionTimeOfDay
+    var ratingStars: Int?
+    var precisionScore: Int?
+    var stabilityScore: Int?
+    var efficiencyScore: Int?
 
     init(
         id: UUID = UUID(),
@@ -163,7 +167,11 @@ struct GameResult: Codable, Identifiable, Equatable {
         buildingID: String? = nil,
         style: BuildingStyle,
         difficulty: Int,
-        timeOfDay: ConstructionTimeOfDay
+        timeOfDay: ConstructionTimeOfDay,
+        ratingStars: Int? = nil,
+        precisionScore: Int? = nil,
+        stabilityScore: Int? = nil,
+        efficiencyScore: Int? = nil
     ) {
         self.id = id
         self.completedAt = completedAt
@@ -180,6 +188,10 @@ struct GameResult: Codable, Identifiable, Equatable {
         self.style = style
         self.difficulty = max(1, difficulty)
         self.timeOfDay = timeOfDay
+        self.ratingStars = ratingStars.map { min(3, max(0, $0)) }
+        self.precisionScore = precisionScore.map { min(100, max(0, $0)) }
+        self.stabilityScore = stabilityScore.map { min(100, max(0, $0)) }
+        self.efficiencyScore = efficiencyScore.map { min(100, max(0, $0)) }
     }
 }
 
@@ -193,6 +205,10 @@ struct JournalEntry: Codable, Identifiable, Equatable {
     var rewardCoins: Int
     var outcome: ConstructionOutcome
     var buildingName: String?
+    var ratingStars: Int?
+    var precisionScore: Int?
+    var stabilityScore: Int?
+    var efficiencyScore: Int?
 
     init(result: GameResult, buildingName: String?) {
         id = result.id
@@ -204,6 +220,10 @@ struct JournalEntry: Codable, Identifiable, Equatable {
         rewardCoins = result.rewardCoins
         outcome = result.outcome
         self.buildingName = buildingName
+        ratingStars = result.ratingStars
+        precisionScore = result.precisionScore
+        stabilityScore = result.stabilityScore
+        efficiencyScore = result.efficiencyScore
     }
 }
 

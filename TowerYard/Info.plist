@@ -22,12 +22,6 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Tower Yard can use the camera when a website asks you to upload a photo.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Tower Yard can access selected photos when a website asks you to upload an image.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Tower Yard can save selected uploads when a website requests it.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -37,10 +31,6 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UISupportedInterfaceOrientations</key>
