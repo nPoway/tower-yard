@@ -10,6 +10,7 @@ struct DailyContractView: View {
 
     var body: some View {
         let progress = progressStore.dailyProgress(for: dailyContract)
+        let streak = progressStore.dailyStreakStatus(for: dailyContract)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -44,6 +45,8 @@ struct DailyContractView: View {
                     }
 
                     DailyModifierCard(modifier: dailyContract.modifier)
+
+                    DailyStreakCard(streak: streak)
 
                     Button {
                         onLaunch(dailyContract)
@@ -99,6 +102,74 @@ private struct DailyModifierCard: View {
         }
         .padding(10)
         .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct DailyStreakCard: View {
+    let streak: DailyStreakStatus
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "flame.fill")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.red)
+                    .frame(width: 34, height: 34)
+                    .background(Color.red.opacity(0.13), in: RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Site Streak")
+                        .font(.subheadline.weight(.bold))
+                    Text(streak.statusMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 8) {
+                streakMetric(title: "Current", value: "\(streak.currentDays) days", color: .red)
+                streakMetric(title: "Best", value: "\(streak.bestDays) days", color: .orange)
+            }
+
+            if let milestone = streak.nextMilestone,
+               let days = streak.daysUntilNextMilestone {
+                Label(
+                    nextBonusLabel(for: milestone, days: days),
+                    systemImage: "gift.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.orange)
+            } else {
+                Label("Current streak has reached every milestone bonus.", systemImage: "checkmark.seal.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.green)
+            }
+        }
+        .padding(10)
+        .background(Color.red.opacity(0.07), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func streakMetric(title: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func nextBonusLabel(for milestone: DailyStreakMilestone, days: Int) -> String {
+        let dayUnit = days == 1 ? "day" : "days"
+        return "Next bonus: \(milestone.title) · +\(milestone.rewardCoins) coins · \(days) \(dayUnit) away"
     }
 }
 

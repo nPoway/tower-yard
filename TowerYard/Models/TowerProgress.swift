@@ -30,6 +30,7 @@ struct TowerProgress: Codable, Equatable {
     var contractRunsPlayed: Int = 0
     var highestBuiltHeight: Int = 0
     var dailyRecordsByDateKey: [String: DailyProgress] = [:]
+    var rewardedDailyStreakDateKeys: Set<String> = []
     var blueprintRecordsByID: [String: BlueprintProgress] = [:]
     var constructionStats: ConstructionStats = ConstructionStats()
     var achievementStates: [AchievementState] = AchievementCatalog.all.map { AchievementState(id: $0.id) }
@@ -48,6 +49,7 @@ struct TowerProgress: Codable, Equatable {
         case contractRunsPlayed
         case highestBuiltHeight
         case dailyRecordsByDateKey
+        case rewardedDailyStreakDateKeys
         case blueprintRecordsByID
         case constructionStats
         case achievementStates
@@ -66,6 +68,7 @@ struct TowerProgress: Codable, Equatable {
         contractRunsPlayed = try container.decodeIfPresent(Int.self, forKey: .contractRunsPlayed) ?? 0
         highestBuiltHeight = try container.decodeIfPresent(Int.self, forKey: .highestBuiltHeight) ?? 0
         dailyRecordsByDateKey = try container.decodeIfPresent([String: DailyProgress].self, forKey: .dailyRecordsByDateKey) ?? [:]
+        rewardedDailyStreakDateKeys = try container.decodeIfPresent(Set<String>.self, forKey: .rewardedDailyStreakDateKeys) ?? []
         blueprintRecordsByID = try container.decodeIfPresent([String: BlueprintProgress].self, forKey: .blueprintRecordsByID) ?? [:]
         constructionStats = try container.decodeIfPresent(ConstructionStats.self, forKey: .constructionStats) ?? ConstructionStats()
         achievementStates = try container.decodeIfPresent([AchievementState].self, forKey: .achievementStates) ?? AchievementCatalog.all.map { AchievementState(id: $0.id) }
@@ -85,6 +88,7 @@ struct TowerProgress: Codable, Equatable {
         try container.encode(contractRunsPlayed, forKey: .contractRunsPlayed)
         try container.encode(highestBuiltHeight, forKey: .highestBuiltHeight)
         try container.encode(dailyRecordsByDateKey, forKey: .dailyRecordsByDateKey)
+        try container.encode(rewardedDailyStreakDateKeys, forKey: .rewardedDailyStreakDateKeys)
         try container.encode(blueprintRecordsByID, forKey: .blueprintRecordsByID)
         try container.encode(constructionStats, forKey: .constructionStats)
         try container.encode(achievementStates, forKey: .achievementStates)
@@ -99,6 +103,7 @@ struct TowerProgress: Codable, Equatable {
         contractRunsPlayed = max(0, contractRunsPlayed)
         highestBuiltHeight = max(0, highestBuiltHeight)
         bestRatingStarsByContractID = bestRatingStarsByContractID.mapValues { min(3, max(0, $0)) }
+        rewardedDailyStreakDateKeys = Set(rewardedDailyStreakDateKeys.sorted().suffix(366))
         journalEntries = Array(journalEntries.prefix(20))
         recordedGameResultIDs = Array(recordedGameResultIDs.suffix(100))
 
@@ -113,6 +118,48 @@ struct TowerProgress: Codable, Equatable {
 struct DailyProgress: Codable, Equatable {
     var bestHeight: Int = 0
     var completed: Bool = false
+}
+
+enum DailyStreakMilestone: Int, CaseIterable, Identifiable {
+    case threeDays = 3
+    case sevenDays = 7
+    case fourteenDays = 14
+    case thirtyDays = 30
+
+    var id: Int { rawValue }
+
+    var rewardCoins: Int {
+        switch self {
+        case .threeDays: 20
+        case .sevenDays: 50
+        case .fourteenDays: 120
+        case .thirtyDays: 300
+        }
+    }
+
+    var title: String {
+        "\(rawValue)-Day Streak"
+    }
+}
+
+struct DailyStreakStatus: Equatable {
+    let currentDays: Int
+    let bestDays: Int
+    let completedToday: Bool
+    let nextMilestone: DailyStreakMilestone?
+    let daysUntilNextMilestone: Int?
+
+    var statusMessage: String {
+        if completedToday {
+            return "Today's shift is logged. Return tomorrow to keep the streak going."
+        }
+
+        if currentDays > 0 {
+            return "Complete today's order to keep your streak alive."
+        }
+
+        return "Complete today's order to start a Site Streak."
+    }
 }
 
 struct BlueprintProgress: Codable, Equatable {
@@ -274,6 +321,36 @@ final class TowerProgressStore: ObservableObject {
 
     func dailyProgress(for contract: DailyContract) -> DailyProgress {
         progress.dailyRecordsByDateKey[contract.dateKey] ?? DailyProgress()
+    }
+
+    func dailyStreakStatus(for contract: DailyContract, calendar: Calendar = .current) -> DailyStreakStatus {
+        let completedToday = progress.dailyRecordsByDateKey[contract.dateKey]?.completed ?? false
+        let currentDays: Int
+
+        if completedToday {
+            currentDays = completedDailyStreak(
+                endingAt: contract.dateKey,
+                records: progress.dailyRecordsByDateKey,
+                calendar: calendar
+            )
+        } else if let previousDateKey = previousDailyDateKey(before: contract.dateKey, calendar: calendar) {
+            currentDays = completedDailyStreak(
+                endingAt: previousDateKey,
+                records: progress.dailyRecordsByDateKey,
+                calendar: calendar
+            )
+        } else {
+            currentDays = 0
+        }
+
+        let nextMilestone = DailyStreakMilestone.allCases.first { $0.rawValue > currentDays }
+        return DailyStreakStatus(
+            currentDays: currentDays,
+            bestDays: max(currentDays, longestDailyStreak(in: progress.dailyRecordsByDateKey, calendar: calendar)),
+            completedToday: completedToday,
+            nextMilestone: nextMilestone,
+            daysUntilNextMilestone: nextMilestone.map { max(0, $0.rawValue - currentDays) }
+        )
     }
 
     func blueprintProgress(for challenge: BlueprintChallenge) -> BlueprintProgress {
@@ -447,6 +524,7 @@ final class TowerProgressStore: ObservableObject {
         let didComplete = completed ?? (height >= contract.targetHeight)
         let alreadyCompleted = record.completed
         var coinsAwarded = 0
+        var streakMilestone: DailyStreakMilestone?
 
         if didComplete {
             record.completed = true
@@ -455,9 +533,25 @@ final class TowerProgressStore: ObservableObject {
             }
         }
 
+        updated.dailyRecordsByDateKey[contract.dateKey] = record
+
+        if didComplete,
+           !alreadyCompleted,
+           !updated.rewardedDailyStreakDateKeys.contains(contract.dateKey) {
+            let streakDays = completedDailyStreak(
+                endingAt: contract.dateKey,
+                records: updated.dailyRecordsByDateKey,
+                calendar: .current
+            )
+            if let milestone = DailyStreakMilestone(rawValue: streakDays) {
+                coinsAwarded += milestone.rewardCoins
+                updated.rewardedDailyStreakDateKeys.insert(contract.dateKey)
+                streakMilestone = milestone
+            }
+        }
+
         let runReward = didComplete ? max(0, runRewardCoins) : 0
 
-        updated.dailyRecordsByDateKey[contract.dateKey] = record
         let result = gameResult(
             for: .daily(contract),
             height: height,
@@ -476,9 +570,12 @@ final class TowerProgressStore: ObservableObject {
         progress = updated
 
         if didComplete {
-            let message = alreadyCompleted
+            let baseMessage = alreadyCompleted
                 ? replayMessage(runReward: runReward, summary: summary)
                 : rewardMessage(prefix: nil, coinsAwarded: result.rewardCoins, summary: summary)
+            let message = streakMilestone.map {
+                "\(baseMessage) \($0.title) bonus: +\($0.rewardCoins) coins."
+            } ?? baseMessage
             return RunOutcome(
                 title: "Daily Complete",
                 message: message,
@@ -767,6 +864,78 @@ final class TowerProgressStore: ObservableObject {
         case .daily:
             return nil
         }
+    }
+
+    private func completedDailyStreak(
+        endingAt dateKey: String,
+        records: [String: DailyProgress],
+        calendar: Calendar
+    ) -> Int {
+        guard var date = date(forDailyKey: dateKey, calendar: calendar) else {
+            return 0
+        }
+
+        var streak = 0
+        while records[DailyContract.dateKey(for: date, calendar: calendar)]?.completed == true {
+            streak += 1
+            guard let previousDate = calendar.date(byAdding: .day, value: -1, to: date) else {
+                break
+            }
+            date = previousDate
+        }
+
+        return streak
+    }
+
+    private func longestDailyStreak(
+        in records: [String: DailyProgress],
+        calendar: Calendar
+    ) -> Int {
+        let completedDates = records.compactMap { dateKey, progress -> Date? in
+            guard progress.completed else { return nil }
+            return date(forDailyKey: dateKey, calendar: calendar)
+        }
+        .sorted()
+
+        var longest = 0
+        var current = 0
+        var previousDate: Date?
+
+        for date in completedDates {
+            if let previousDate,
+               calendar.dateComponents([.day], from: previousDate, to: date).day == 1 {
+                current += 1
+            } else {
+                current = 1
+            }
+
+            longest = max(longest, current)
+            previousDate = date
+        }
+
+        return longest
+    }
+
+    private func previousDailyDateKey(before dateKey: String, calendar: Calendar) -> String? {
+        guard let date = date(forDailyKey: dateKey, calendar: calendar),
+              let previousDate = calendar.date(byAdding: .day, value: -1, to: date) else {
+            return nil
+        }
+        return DailyContract.dateKey(for: previousDate, calendar: calendar)
+    }
+
+    private func date(forDailyKey dateKey: String, calendar: Calendar) -> Date? {
+        let values = dateKey.split(separator: "-").compactMap { Int($0) }
+        guard values.count == 3 else { return nil }
+
+        var components = DateComponents()
+        components.calendar = calendar
+        components.timeZone = calendar.timeZone
+        components.year = values[0]
+        components.month = values[1]
+        components.day = values[2]
+
+        return calendar.date(from: components).map(calendar.startOfDay(for:))
     }
 
     private func rewardMessage(prefix: String?, coinsAwarded: Int, summary: ConstructionRecordSummary) -> String {
